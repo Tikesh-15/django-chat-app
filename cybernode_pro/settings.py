@@ -5,15 +5,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-your-key-here'
 DEBUG = True
-ALLOWED_HOSTS = ['*']
 # --- 1. HOST & SECURITY SETTINGS ---
 # Yahan '*' aur ngrok dono hain, error ki koi gunjayish nahi
-ALLOWED_HOSTS = ['shalelike-cecilia-discifloral.ngrok-free.dev', '127.0.0.1', 'localhost', '*']
+ALLOWED_HOSTS = ['django-chat-app-tikesh.onrender.com', 'localhost', '127.0.0.1', '*']
 
-# HTTPS/Ngrok ke liye zaroori
 CSRF_TRUSTED_ORIGINS = [
-    'https://shalelike-cecilia-discifloral.ngrok-free.dev',
-    'https://*.ngrok-free.dev'
+    'https://django-chat-app-tikesh.onrender.com',
+    'https://*.onrender.com'
 ]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -32,6 +30,7 @@ INSTALLED_APPS = [
 # --- 3. MIDDLEWARE ---
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # <--- यह लाइन यहाँ जोड़ें
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -102,9 +101,10 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') # Ngrok deployment ke liye zaroori
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# यह लाइन Render पर CSS लोड करने के लिए जादुई काम करेगी
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (User uploads)
 MEDIA_URL = '/media/'
