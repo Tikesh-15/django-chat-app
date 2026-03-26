@@ -1,19 +1,17 @@
-"""
-ASGI config for cybernode_pro project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/6.0/howto/deployment/asgi/
-"""
-
 import os
+import django
 from django.core.asgi import get_asgi_application
+
+# 1. सबसे पहले एनवायरनमेंट सेट करें
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cybernode_pro.settings')
+
+# 2. Django को मैन्युअली सेटअप करें (यह सबसे ज़रूरी लाइन है)
+django.setup()
+
+# 3. अब बाकी चीजें इम्पोर्ट करें
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 import chat.routing
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cybernode_pro.settings')
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
