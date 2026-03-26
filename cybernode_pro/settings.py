@@ -5,7 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-your-key-here'
 DEBUG = True
-
+ALLOWED_HOSTS = ['*']
 # --- 1. HOST & SECURITY SETTINGS ---
 # Yahan '*' aur ngrok dono hain, error ki koi gunjayish nahi
 ALLOWED_HOSTS = ['shalelike-cecilia-discifloral.ngrok-free.dev', '127.0.0.1', 'localhost', '*']
@@ -122,3 +122,6 @@ if DEBUG:
     ]
     # Secure connection header
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
