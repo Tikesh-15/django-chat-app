@@ -1,0 +1,18 @@
+from django.contrib import admin
+from .models import Profile, Message, Contact
+
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'avatar')
+    search_fields = ('user__username',)
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ('sender', 'receiver', 'timestamp', 'is_read')
+    list_filter = ('is_read', 'timestamp')
+    search_fields = ('sender__username', 'receiver__username', 'content')
+
+@admin.register(Contact)
+class ContactAdmin(admin.ModelAdmin):
+    list_display = ('user', 'friend', 'nickname')
+    search_fields = ('user__username', 'friend__username', 'nickname')

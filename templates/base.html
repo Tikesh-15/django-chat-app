@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberNode | Secure Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        // CRITICAL: Page render hone se pehle theme check karo (Flicker fix karne ke liye)
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+
+        // Tailwind Config
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+
+    <style>
+        /* Base Smooth Transitions */
+        * { transition: background-color 0.2s ease, border-color 0.2s ease; }
+
+        /* Light Mode Styles */
+        body { background-color: #f1f5f9; color: #1e293b; font-family: 'Segoe UI', sans-serif; }
+        .chat-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .my-msg { background: #3b82f6; color: white; border-radius: 15px 15px 2px 15px; }
+        .their-msg { background: #e2e8f0; color: #1e293b; border-radius: 15px 15px 15px 2px; }
+
+        /* Dark Mode Specific CSS Overrides */
+        .dark body { background-color: #0f172a; color: #f8fafc; }
+        .dark .chat-card { background-color: #1e293b; border: 1px solid #334155; }
+        .dark .their-msg { background-color: #334155; color: #f8fafc; }
+        .dark nav { background-color: #1e293b !important; border-color: #334155 !important; }
+        .dark input, .dark .bg-white { background-color: #1e293b; color: #f8fafc; border-color: #334155; }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
+    
+    <nav class="bg-white dark:bg-slate-800 border-b dark:border-slate-700 p-4 mb-6 shadow-sm transition-colors">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-blue-600 tracking-tighter italic">CYBER_NODE</h1>
+            
+            <div class="flex items-center gap-4">
+                <button onclick="toggleDarkMode()" class="p-2 bg-slate-100 dark:bg-slate-700 rounded-full hover:scale-110 transition-all shadow-inner border border-transparent dark:border-slate-600">
+                    <span id="mode-icon" class="text-lg">🌓</span>
+                </button>
+
+                {% if user.is_authenticated %}
+                <div class="text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-3">
+                    <span class="hidden sm:inline">Hi, <b class="text-blue-500">{{ user.username }}</b></span>
+                    <form action="{% url 'logout' %}" method="post" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="bg-red-50 dark:bg-red-900/20 text-red-500 px-3 py-1 rounded-lg hover:bg-red-500 hover:text-white transition-all text-xs font-bold uppercase">Logout</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 pb-10">
+        {% block content %} {% endblock %}
+    </main>
+
+    <script>
+        function updateIcon(isDark) {
+            const icon = document.getElementById('mode-icon');
+            if (icon) {
+                icon.innerText = isDark ? '☀️' : '🌙';
+            }
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const isDark = html.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateIcon(isDark);
+        }
+
+        // Run on page load to set correct icon
+        window.addEventListener('DOMContentLoaded', () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            updateIcon(isDark);
+        });
+    </script>
+</body>
+</html>

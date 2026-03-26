@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block content %}
+<form method="POST">
+    {% csrf_token %}  ...
+</form>
+<div class="max-w-md mx-auto mt-12 animate-fadeIn">
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 transition-all">
+        
+        <div class="text-center mb-8">
+            <div class="inline-block p-3 bg-green-100 dark:bg-green-900/30 rounded-2xl mb-4 text-2xl">
+                🚀
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tighter italic uppercase">CREATE_NODE</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 font-mono">Join the CyberNode Distributed Network</p>
+        </div>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest ml-1">
+                        {{ field.label }}
+                    </label>
+                    <input type="{{ field.field.widget.input_type }}" 
+                           name="{{ field.name }}" 
+                           class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm font-mono"
+                           placeholder="Set {{ field.label }}..."
+                           required>
+                    
+                    {% if field.help_text %}
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-tight px-1 italic">
+                            {{ field.help_text|safe }}
+                        </p>
+                    {% endif %}
+                    
+                    {% for error in field.errors %}
+                        <p class="text-red-500 text-[10px] mt-1 font-bold italic ml-1">⚠️ {{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition-all shadow-lg shadow-blue-500/30 uppercase text-xs tracking-[0.2em] active:scale-95 mt-6">
+                INITIALIZE_ACCOUNT
+            </button>
+        </form>
+
+        <div class="mt-8 pt-6 border-t dark:border-slate-700 text-center">
+            <p class="text-xs text-slate-600 dark:text-slate-400">
+                Already registered? 
+                <a href="{% url 'login' %}" class="text-blue-600 dark:text-blue-400 font-bold hover:underline">Log_In_Here</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Django default help lists ko clean karne ke liye */
+    .helptext, ul.helptext { display: none; }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+</style>
+{% endblock %}

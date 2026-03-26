@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.18.0.js"></script>
+
+<style>
+    :root {
+        --bg-glass: rgba(15, 23, 42, 0.8);
+        --border-glass: rgba(255, 255, 255, 0.15);
+    }
+
+    .video-chat-container {
+        height: 82vh; width: 100%; max-width: 1000px; margin: 10px auto;
+        background: #000; position: relative; border-radius: 1.5rem;
+        overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+        border: 1px solid var(--border-glass); touch-action: none;
+    }
+
+    #remote-player { width: 100%; height: 100%; background: #0f172a; position: relative; z-index: 1; }
+
+    /* PIP Window */
+    #local-player {
+        position: absolute; top: 80px; right: 15px;
+        width: 100px; height: 140px; background: #1e293b;
+        border-radius: 1rem; border: 2px solid rgba(255,255,255,0.3);
+        z-index: 50; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        cursor: grab;
+    }
+
+    /* Fixed Top Action Bar for all devices */
+    .top-action-bar {
+        position: absolute; top: 15px; left: 0; right: 0;
+        display: flex; justify-content: center; align-items: center;
+        gap: 8px; z-index: 100; padding: 0 10px;
+    }
+
+    .btn-action {
+        padding: 8px; min-width: 50px; height: 50px; border-radius: 14px;
+        background: var(--bg-glass); backdrop-filter: blur(15px);
+        border: 1px solid var(--border-glass); color: white;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        font-size: 8px; font-weight: 800; cursor: pointer; transition: all 0.2s;
+        text-transform: uppercase;
+    }
+
+    .btn-action i { font-size: 18px; margin-bottom: 3px; }
+    .btn-action:active { transform: scale(0.9); }
+
+    .status-on { color: #4ade80; } 
+    .status-off { color: #f87171; }
+    
+    .btn-next-pro { background: #3b82f6; border: none; min-width: 65px; }
+    .btn-exit { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+
+    /* Floating Chat Toggle */
+    #chat-toggle-btn {
+        position: absolute; bottom: 25px; left: 20px;
+        width: 50px; height: 50px; background: #3b82f6;
+        border-radius: 50%; display: flex; align-items: center;
+        justify-content: center; color: white; font-size: 20px;
+        z-index: 110; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+
+    /* Chat Box Popup */
+    #chat-box {
+        position: absolute; bottom: 85px; left: 15px; right: 15px;
+        height: 280px; background: var(--bg-glass);
+        backdrop-filter: blur(25px); border-radius: 1.2rem;
+        z-index: 100; display: none; flex-direction: column;
+        border: 1px solid var(--border-glass); padding: 12px;
+    }
+
+    @media (min-width: 768px) {
+        #local-player { width: 160px; height: 220px; top: 90px; right: 20px; }
+        #chat-box { width: 300px; right: auto; }
+    }
+
+    #chat-messages { flex: 1; overflow-y: auto; color: white; font-size: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .msg { padding: 8px 12px; border-radius: 10px; max-width: 80%; }
+    .msg-remote { background: rgba(255,255,255,0.1); align-self: flex-start; }
+    .msg-local { background: #3b82f6; align-self: flex-end; }
+
+    #waiting-overlay { position: absolute; inset: 0; background: #020617; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+    .loader-ring { width: 50px; height: 50px; border: 4px solid rgba(59, 130, 246, 0.1); border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+
+<div class="max-w-6xl mx-auto p-2">
+    <div class="video-chat-container" id="main-container">
+        
+        <div class="top-action-bar">
+            <button onclick="toggleMic()" class="btn-action">
+                <i id="mic-icon" class="fa-solid fa-microphone"></i>
+                <span id="mic-status" class="status-on">ON</span>
+            </button>
+            <button onclick="toggleCam()" class="btn-action">
+                <i id="cam-icon" class="fa-solid fa-video"></i>
+                <span id="cam-status" class="status-on">ON</span>
+            </button>
+            <button onclick="nextStranger()" class="btn-action btn-next-pro">
+                <i class="fa-solid fa-forward-step"></i>
+                <span>NEXT</span>
+            </button>
+            <a href="{% url 'index' %}" class="btn-action btn-exit">
+                <i class="fa-solid fa-power-off"></i>
+                <span>EXIT</span>
+            </a>
+        </div>
+
+        <div id="local-player" onmousedown="dragStart(event)" ontouchstart="dragStart(event)"></div>
+
+        <div id="remote-player">
+            <div id="waiting-overlay">
+                <div class="loader-ring"></div>
+                <p class="mt-4 text-slate-500 font-bold text-[10px] tracking-[4px] uppercase animate-pulse">Scanning Network...</p>
+            </div>
+        </div>
+
+        <div id="chat-toggle-btn" onclick="toggleChatBox()"><i class="fa-solid fa-comments"></i></div>
+
+        <div id="chat-box">
+            <div class="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
+                <span class="text-xs font-bold text-white tracking-widest">SECURE_CHAT</span>
+                <i class="fa-solid fa-circle-chevron-down cursor-pointer text-white" onclick="toggleChatBox()"></i>
+            </div>
+            <div id="chat-messages"></div>
+            <form class="flex gap-2 mt-2" onsubmit="sendChatMessage(event)">
+                <input type="text" id="chat-input" class="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-white text-xs outline-none" placeholder="Enter message..." autocomplete="off">
+                <button type="submit" class="text-blue-400 px-1"><i class="fa-solid fa-paper-plane"></i></button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const APP_ID = "6373f12f56aa494f9b62b921c3e8d27b"; 
+    let client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+    let localTracks = { videoTrack: null, audioTrack: null };
+    let chatSocket = null;
+    let isMicMuted = false, isCamOff = false;
+
+    function toggleChatBox() {
+        const box = document.getElementById('chat-box');
+        box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'flex' : 'none';
+    }
+
+    // --- DRAG LOGIC ---
+    let active = false, currentX, currentY, initialX, initialY, xOffset = 0, yOffset = 0;
+    const dragItem = document.querySelector("#local-player");
+    function dragStart(e) {
+        initialX = (e.type === "touchstart" ? e.touches[0].clientX : e.clientX) - xOffset;
+        initialY = (e.type === "touchstart" ? e.touches[0].clientY : e.clientY) - yOffset;
+        if (e.target === dragItem || dragItem.contains(e.target)) active = true;
+    }
+    function drag(e) {
+        if (active) {
+            e.preventDefault();
+            currentX = (e.type === "touchmove" ? e.touches[0].clientX : e.clientX) - initialX;
+            currentY = (e.type === "touchmove" ? e.touches[0].clientY : e.clientY) - initialY;
+            xOffset = currentX; yOffset = currentY;
+            dragItem.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+        }
+    }
+    window.addEventListener("mousemove", drag); window.addEventListener("mouseup", () => active = false);
+    window.addEventListener("touchmove", drag, {passive: false}); window.addEventListener("touchend", () => active = false);
+
+    // --- SYSTEM LOGIC ---
+    async function joinRoom(roomId) {
+        try {
+            await client.join(APP_ID, roomId, null, null);
+            [localTracks.audioTrack, localTracks.videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+            localTracks.videoTrack.play("local-player");
+            await client.publish(Object.values(localTracks));
+
+            const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+            chatSocket = new WebSocket(`${wsScheme}://${window.location.host}/ws/chat/${roomId}/`);
+            chatSocket.onmessage = e => {
+                const data = JSON.parse(e.data);
+                appendMessage(data.message, data.sender === "{{ request.user.username }}" ? 'local' : 'remote');
+            };
+        } catch (err) { console.error(err); }
+    }
+
+    function sendChatMessage(e) {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        if (input.value && chatSocket) {
+            chatSocket.send(JSON.stringify({'message': input.value, 'sender': "{{ request.user.username }}"}));
+            input.value = '';
+        }
+    }
+
+    function appendMessage(text, type) {
+        const msgDiv = document.getElementById('chat-messages');
+        const item = document.createElement('div');
+        item.className = `msg msg-${type}`;
+        item.innerText = text;
+        msgDiv.appendChild(item);
+        msgDiv.scrollTop = msgDiv.scrollHeight;
+    }
+
+    client.on("user-published", async (user, mediaType) => {
+        await client.subscribe(user, mediaType);
+        if (mediaType === "video") {
+            document.getElementById('waiting-overlay').style.display = 'none';
+            user.videoTrack.play("remote-player");
+        }
+        if (mediaType === "audio") user.audioTrack.play();
+    });
+
+    async function start() {
+        const res = await fetch("{% url 'check_room' %}");
+        const data = await res.json();
+        if (data.room_id) { joinRoom(data.room_id); } 
+        else { setTimeout(start, 3000); }
+    }
+
+    async function toggleMic() {
+        isMicMuted = !isMicMuted;
+        await localTracks.audioTrack.setEnabled(!isMicMuted);
+        document.getElementById('mic-status').innerText = isMicMuted ? "OFF" : "ON";
+        document.getElementById('mic-status').className = isMicMuted ? "status-off" : "status-on";
+        document.getElementById('mic-icon').className = isMicMuted ? "fa-solid fa-microphone-slash status-off" : "fa-solid fa-microphone";
+    }
+
+    async function toggleCam() {
+        isCamOff = !isCamOff;
+        await localTracks.videoTrack.setEnabled(!isCamOff);
+        document.getElementById('cam-status').innerText = isCamOff ? "OFF" : "ON";
+        document.getElementById('cam-status').className = isCamOff ? "status-off" : "status-on";
+        document.getElementById('cam-icon').className = isCamOff ? "fa-solid fa-video-slash status-off" : "fa-solid fa-video";
+    }
+
+    function nextStranger() { location.reload(); }
+    start();
+</script>
+{% endblock %}

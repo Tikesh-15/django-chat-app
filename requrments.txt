@@ -1,0 +1,16 @@
+Django>=5.0
+daphne>=4.0.0
+channels>=4.0.0
+channels-redis>=4.1.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.3.0
+requests>=2.31.0
+asgiref>=3.7.0
+Pillow>=10.0.0
+sqlparse>=0.4.4
+tzdata>=2023.3
+pip install -r requirements.txt
+python manage.py makemigrations
+python manage.py migrate
+python manage.py collectstatic
+python manage.py runserver

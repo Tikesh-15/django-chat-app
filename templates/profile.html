@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-md mx-auto mt-10 animate-fadeIn">
+    <div class="bg-white dark:bg-slate-800 shadow-2xl rounded-3xl p-8 border border-slate-100 dark:border-slate-700 transition-colors">
+        
+        <div class="text-center mb-8">
+            <div class="relative inline-block group">
+                <div class="w-28 h-28 bg-blue-600 text-white rounded-full flex items-center justify-center text-5xl font-bold mx-auto shadow-2xl overflow-hidden border-4 border-white dark:border-slate-700">
+                    {% if profile.avatar %}
+                        <img src="{{ profile.avatar.url }}" id="avatar-preview" class="w-full h-full object-cover">
+                    {% else %}
+                        <span id="initials-avatar">{{ user.username|first|upper }}</span>
+                    {% endif %}
+                </div>
+                <label for="avatar-input" class="absolute bottom-1 right-1 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 shadow-lg transition-transform hover:scale-110">
+                    <span class="text-xs">📷</span>
+                </label>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 italic uppercase mt-4 tracking-tighter">NODE_PROFILE</h2>
+            <p class="text-[10px] text-slate-400 font-mono mt-1">Status: Authorized Access</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <input type="file" name="avatar" id="avatar-input" class="hidden" accept="image/*" onchange="previewImage(this)">
+
+            <div>
+                <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-2 uppercase tracking-[0.2em] ml-1">Current Node Identity</label>
+                <input type="text" name="username" value="{{ user.username }}" 
+                       class="w-full px-5 py-3 border border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm transition-all shadow-inner">
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black text-xs tracking-widest shadow-lg shadow-blue-500/30 transition-all active:scale-95 uppercase">
+                UPDATE_CREDENTIALS
+            </button>
+        </form>
+        
+        <div class="mt-8 text-center pt-4 border-t dark:border-slate-700">
+            <a href="{% url 'index' %}" class="text-xs font-bold text-slate-400 hover:text-blue-500 transition-colors tracking-widest uppercase">
+                ← Return to Terminal
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Image selection ke baad turant preview dikhane ke liye
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                let img = document.getElementById('avatar-preview');
+                if (img) {
+                    img.src = e.target.result;
+                } else {
+                    // Agar pehle sirf initials the, toh naya img tag banao
+                    let initials = document.getElementById('initials-avatar');
+                    initials.outerHTML = `<img src="${e.target.result}" id="avatar-preview" class="w-full h-full object-cover">`;
+                }
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+</style>
+{% endblock %}
